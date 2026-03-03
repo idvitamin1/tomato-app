@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Tomato</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#d32f2f">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+
+<style>
+body{
+  margin:0;
+  font-family:sans-serif;
+  padding:30px;
+}
+input,button,select{
+  width:100%;
+  padding:20px;
+  margin-bottom:15px;
+  font-size:18px;
+}
+button{
+  background:#2e7d32;
+  color:white;
+  border:none;
+}
+</style>
+</head>
+<body>
+
+<h2>บันทึกเก็บมะเขือเทศ</h2>
+
+<select id="house"></select>
+<input type="number" id="baskets" placeholder="จำนวนตะกร้า">
+<button onclick="save()">บันทึก</button>
+
+<script>
+
+const API_URL = "https://script.google.com/macros/s/AKfycbz9-LOpEKNINN3HmgLplDtD_nA9JRpCdmIaLaj3qV5LNYsRKG46cejTEdgXZaLessI/exec";
+
+for (let i = 1; i <= 25; i++) {
+  let opt = document.createElement("option");
+  opt.value = i;
+  opt.text = "โรง " + i;
+  document.getElementById("house").appendChild(opt);
+}
+
+async function save(){
+
+  const data = {
+    house: document.getElementById("house").value,
+    baskets: document.getElementById("baskets").value
+  };
+
+  const res = await fetch(API_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(data)
+  });
+
+  const text = await res.text();
+  alert(text);
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
+</script>
+</body>
+</html>
