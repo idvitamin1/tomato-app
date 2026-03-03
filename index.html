@@ -1,75 +1,368 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-<title>Tomato</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #ffffff;
+    }
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#d32f2f">
-<link rel="icon" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 30px 24px 0;
+      box-sizing: border-box;
+    }
 
-<style>
-body{
-  margin:0;
-  font-family:sans-serif;
-  padding:30px;
-}
-input,button,select{
-  width:100%;
-  padding:20px;
-  margin-bottom:15px;
-  font-size:18px;
-}
-button{
-  background:#2e7d32;
-  color:white;
-  border:none;
-}
-</style>
+    h2 {
+      text-align: center;
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 40px;
+    }
+
+    .form-area {
+      flex: 1;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 34px;
+      margin-bottom: 28px;
+      font-size: 36px;
+      border-radius: 22px;
+      border: 2px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #2e7d32;
+      box-shadow: 0 0 0 4px rgba(46,125,50,0.25);
+    }
+
+    button {
+      width: 100%;
+      padding: 36px;
+      font-size: 38px;
+      font-weight: 800;
+      border-radius: 24px;
+      border: none;
+    }
+
+    .primary {
+      background: #2e7d32;
+      color: white;
+    }
+
+    .secondary {
+      background: #f0f0f0;
+      margin-top: 18px;
+    }
+
+    .bottom-area {
+      padding: 30px 0 30px;
+      background: white;
+    }
+
+    #result {
+      text-align: center;
+      font-size: 34px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #2e7d32;
+    }
+
+    /* Modal */
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: white;
+      z-index: 999;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      padding: 30px 24px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 34px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .close {
+      font-size: 40px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 28px;
+    }
+
+    th, td {
+      border-bottom: 1px solid #ddd;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .total-row {
+      font-weight: bold;
+      background: #e8f5e9;
+    }
+  </style>
 </head>
+
 <body>
 
-<h2>บันทึกเก็บมะเขือเทศ</h2>
+<div class="app">
 
-<select id="house"></select>
-<input type="number" id="baskets" placeholder="จำนวนตะกร้า">
-<button onclick="save()">บันทึก</button>
+  <h2>บันทึกเก็บมะเขือเทศ</h2>
+
+  <div class="form-area">
+    <select id="house"></select>
+
+    <input type="number" id="baskets" placeholder="จำนวนตะกร้า"
+           min="0" step="1" inputmode="numeric">
+
+    <input type="number" id="lastWeight" placeholder="น้ำหนักตะกร้าใบสุดท้าย"
+           min="0" step="0.1" inputmode="decimal">
+
+    <input type="number" id="weight" placeholder="น้ำหนักต่อ ตะกร้า (ถ้ามี)"
+           min="0" step="0.1" inputmode="decimal">
+  </div>
+
+  <div class="bottom-area">
+    <div id="result"></div>
+
+    <button class="primary" onclick="save()">บันทึก</button>
+
+    <button class="secondary" onclick="showTodayData()">
+      ดูข้อมูลวันนี้
+    </button>
+
+    <button class="secondary" onclick="forecast()">คาดการณ์รอบถัดไป</button>
+
+    <button class="secondary" onclick="openWeightSetting()">
+  ตั้งค่าน้ำหนักตะกร้า</button>
+
+    <button class="secondary" onclick="closeMonth()">ปิดเดือน</button>
+
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span id="modalTitle"></span>
+      <span class="close" onclick="closeModal()">✕</span>
+    </div>
+    <div id="tableContainer"></div>
+  </div>
+</div>
 
 <script>
 
-const API_URL = "https://script.google.com/macros/s/AKfycbz9-LOpEKNINN3HmgLplDtD_nA9JRpCdmIaLaj3qV5LNYsRKG46cejTEdgXZaLessI/exec";
+  for (let i = 1; i <= 25; i++) {
+    let opt = document.createElement("option");
+    opt.value = i;
+    opt.text = "โรง " + i;
+    document.getElementById("house").appendChild(opt);
+  }
 
-for (let i = 1; i <= 25; i++) {
-  let opt = document.createElement("option");
-  opt.value = i;
-  opt.text = "โรง " + i;
-  document.getElementById("house").appendChild(opt);
+  function save() {
+
+    const btn = document.querySelector(".primary");
+    btn.disabled = true;
+    btn.innerText = "กำลังบันทึก...";
+
+    google.script.run
+      .withSuccessHandler(function (r) {
+
+        document.getElementById("result").innerText = r;
+
+        document.getElementById("baskets").value = "";
+        document.getElementById("weight").value = "";
+        document.getElementById("lastWeight").value = "";
+
+        if (navigator.vibrate) {
+          navigator.vibrate(100);
+        }
+
+        btn.disabled = false;
+        btn.innerText = "บันทึก";
+
+        setTimeout(function () {
+          document.getElementById("result").innerText = "";
+        }, 3000);
+
+      })
+      .withFailureHandler(function(err){
+        showAlert("เกิดข้อผิดพลาด: " + err.message);
+        btn.disabled = false;
+        btn.innerText = "บันทึก";
+      })
+      .saveData(
+        document.getElementById("house").value,
+        Number(document.getElementById("baskets").value),
+        Number(document.getElementById("weight").value),
+        Number(document.getElementById("lastWeight").value)
+      );
+  }
+
+  function forecast() {
+    google.script.run.withSuccessHandler(function (r) {
+      document.getElementById("result").innerText = r;
+    }).generateForecast();
+  }
+
+  function closeMonth() {
+    google.script.run.withSuccessHandler(function (r) {
+      document.getElementById("result").innerText = r;
+    }).closeMonth();
+  }
+
+  function showTodayData() {
+
+    google.script.run
+      .withSuccessHandler(function(res){
+
+        if (!res || !res.rows || res.rows.length === 0) {
+          showAlert("ไม่มีข้อมูลวันนี้");
+          return;
+        }
+
+        document.getElementById("modalTitle").innerText =
+          "ข้อมูลวันนี้ (" + res.date + ")";
+
+        let html = `
+          <table>
+            <tr>
+              <th>โรง</th>
+              <th>เต็ม</th>
+              <th>ใบสุดท้าย</th>
+              <th>รวม</th>
+              <th>นน.</th>
+            </tr>
+        `;
+
+        res.rows.forEach(r => {
+          html += `
+            <tr>
+              <td>${r.house}</td>
+              <td>${r.fullBaskets}</td>
+              <td>${r.lastWeight}</td>
+              <td>${r.totalBaskets}</td>
+              <td>${Number(r.totalWeight).toFixed(1)}</td>
+            </tr>
+          `;
+        });
+
+        html += `
+          <tr class="total-row">
+            <td>รวมทั้งหมด</td>
+            <td></td>
+            <td></td>
+            <td>${res.totalBaskets}</td>
+            <td>${Number(res.totalWeight).toFixed(1)}</td>
+          </tr>
+          </table>
+        `;
+
+        document.getElementById("tableContainer").innerHTML = html;
+        document.getElementById("modal").style.display = "block";
+
+      })
+      .withFailureHandler(function(err){
+        alert("Error: " + err.message);
+      })
+      .getTodayAllData();
+  }
+
+  function closeModal(){
+    document.getElementById("modal").style.display = "none";
+  }
+  function openWeightSetting() {
+
+  google.script.run
+    .withSuccessHandler(function(weight){
+      document.getElementById("newWeight").value = weight;
+      document.getElementById("weightModal").style.display = "block";
+    })
+    .getDefaultBasketWeight();
 }
 
-async function save(){
-
-  const data = {
-    house: document.getElementById("house").value,
-    baskets: document.getElementById("baskets").value
-  };
-
-  const res = await fetch(API_URL,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify(data)
-  });
-
-  const text = await res.text();
-  alert(text);
+function closeWeightModal(){
+  document.getElementById("weightModal").style.display = "none";
 }
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
+function saveWeightSetting(){
+
+  const weight = document.getElementById("newWeight").value;
+
+  google.script.run
+    .withSuccessHandler(function(msg){
+  closeWeightModal();
+  showAlert(msg);
+  })
+    .withFailureHandler(function(err){
+  showAlert("เกิดข้อผิดพลาด: " + err.message);
+})
+    .setDefaultBasketWeight(weight);
+}
+function showAlert(message){
+  document.getElementById("showAlert(msg);").innerText = message;
+  document.getElementById("alertModal").style.display = "block";
 }
 
+function closeAlert(){
+  document.getElementById("alertModal").style.display = "none";
+}
 </script>
+<div id="weightModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span>ตั้งค่าน้ำหนักตะกร้าเต็ม</span>
+      <span class="close" onclick="closeWeightModal()">✕</span>
+    </div>
+
+    <input type="number" id="newWeight"
+           placeholder="กรอกน้ำหนัก (กก.)"
+           step="0.1" min="0">
+
+    <button class="primary" onclick="saveWeightSetting()">
+      บันทึก
+    </button>
+  </div>
+</div>
+<div id="alertModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span>แจ้งเตือน</span>
+      <span class="close" onclick="closeAlert()">✕</span>
+    </div>
+
+    <div id="showAlert(msg);" style="font-size:32px; margin:30px 0;"></div>
+
+    <button class="primary" onclick="closeAlert()">ตกลง</button>
+  </div>
+</div>
 </body>
 </html>
